@@ -1,21 +1,25 @@
 import React from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import Swal from "sweetalert2";
+import useAxios from "../../hooks/useAxios";
+import useAuth from "../../hooks/useAuth";
 
 const SendParcel = () => {
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    // formState: { errors },
   } = useForm();
-
+  const axiosSecure = useAxios();
+  const { user } = useAuth();
   const regionsItems = useLoaderData();
   const duplicateRegions = regionsItems.map((r) => r.region);
   const regions = [...new Set(duplicateRegions)];
   const senderRegion = useWatch({ control, name: "senderRegion" });
   const receiverRegion = useWatch({ control, name: "receiverRegion" });
+  const navigate = useNavigate()
 
   const districtByRegion = (region) => {
     const filterRegions = regionsItems.filter((r) => r.region === region);
@@ -28,6 +32,7 @@ const SendParcel = () => {
     const isDocument = data.parcelType === "document";
     const isSameDistrict = data.senderDistrict === data.receiverDistrict;
     const parcelWeight = parseFloat(data.parcelWeight);
+    console.log("parcel data", isDocument, isSameDistrict, parcelWeight);
     let cost = 0;
     if (isDocument) {
       cost = isSameDistrict ? 60 : 80;
@@ -43,6 +48,9 @@ const SendParcel = () => {
         cost = minCharge + extraCharge;
       }
     }
+
+    data.cost = cost;
+
     Swal.fire({
       title: "Are you sure?",
       text: `You will be charge ${cost} taka!`,
@@ -50,15 +58,22 @@ const SendParcel = () => {
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonText: "confirm and process to payment!",
     }).then((result) => {
       if (result.isConfirmed) {
-        
-        // Swal.fire({
-        //   title: "Deleted!",
-        //   text: "Your file has been deleted.",
-        //   icon: "success",
-        // });
+        axiosSecure.post("/parcels", data).then((res) => {
+          console.log("after post", res.data);
+          if (res.data.insertedId) {
+            Swal.fire({
+              position: "top-end",
+              icon: "success",
+              title: "Your parcel has created please pay",
+              showConfirmButton: false,
+              timer: 2500,
+            });
+            navigate('/dashboard/my-parcels')
+          }
+        });
       }
     });
     console.log("cost", cost);
@@ -127,6 +142,7 @@ const SendParcel = () => {
               <input
                 type="text"
                 {...register("senderName")}
+                defaultValue={user?.displayName}
                 className="input w-full"
                 placeholder="Sender Name"
               />
@@ -134,6 +150,7 @@ const SendParcel = () => {
               <label className="label">Sender Email</label>
               <input
                 type="email"
+                defaultValue={user?.email}
                 {...register("senderEmail")}
                 className="input w-full"
                 placeholder="Sender Email"

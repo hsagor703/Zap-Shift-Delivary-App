@@ -31,6 +31,12 @@ const Navbar = () => {
       <li>
         <NavLink to="/sendParcel">Send Parcel</NavLink>
       </li>
+
+      {user && (
+        <li>
+          <NavLink to="/dashboard/my-parcels">My Parcels</NavLink>
+        </li>
+      )}
     </>
   );
   return (
@@ -74,9 +80,11 @@ const Navbar = () => {
             Logout
           </button>
         ) : (
-          <Link to={'/login'} className="btn">Login</Link>
+          <Link to={"/login"} className="btn">
+            Login
+          </Link>
         )}
-        <Link to='/rider'  className="btn rounded-full bgColor1 font-bold">
+        <Link to="/rider" className="btn rounded-full bgColor1 font-bold">
           Be A Rider
         </Link>
         <BsArrowUpRightCircleFill className="text-2xl mr-4 bgColo" />
